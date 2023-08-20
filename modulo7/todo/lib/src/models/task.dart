@@ -1,14 +1,19 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-class Task {
+import 'package:equatable/equatable.dart';
+
+class Task extends Equatable {
   final int id;
   final String description;
   final bool check;
 
-  Task({
+  const Task({
     required this.id,
     required this.description,
-    required this.check,
+    this.check = false,
   });
+
+  @override
+  List<Object?> get props => [id, description, check];
 
   Task copyWith({
     int? id,

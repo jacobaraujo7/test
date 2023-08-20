@@ -1,8 +1,7 @@
-import 'package:todo/src/models/board.dart';
 import 'package:todo/src/models/task.dart';
+import 'package:todo/src/repositories/board_repository.dart';
 import 'package:todo/src/repositories/isar/task_model.dart';
 
-import '../board_repository.dart';
 import 'isar_datasource.dart';
 
 class IsarBoardRepository implements BoardRepository {
@@ -11,32 +10,31 @@ class IsarBoardRepository implements BoardRepository {
   IsarBoardRepository(this.datasource);
 
   @override
-  Future<Board> fetch() async {
+  Future<List<Task>> fetch() async {
     final models = await datasource.getTasks();
-    final tasks = models
-        .map(
-          (e) => Task(
-            id: e!.id,
-            description: e.description,
-            check: e.check,
-          ),
-        )
+    return models
+        .map((e) => Task(
+              id: e.id,
+              description: e.description,
+              check: e.check,
+            ))
         .toList();
-    return Board(id: 1, title: 'default', tasks: tasks);
   }
 
   @override
-  Future<Board> update(Board board) async {
-    await datasource.removeAll();
-    final models = board.tasks
-        .map((e) => TaskModel() //
-          ..id = e.id
-          ..check = e.check
-          ..description = e.description)
-        .toList();
+  Future<List<Task>> update(List<Task> tasks) async {
+    final models = tasks.map((e) {
+      final model = TaskModel()
+        ..check = e.check
+        ..description = e.description;
+      if (e.id != -1) {
+        model.id = e.id;
+      }
+      return model;
+    }).toList();
 
-    await datasource.addAll(models);
-
-    return board;
+    await datasource.deleteAllTasks();
+    await datasource.putAllTasks(models);
+    return tasks;
   }
 }

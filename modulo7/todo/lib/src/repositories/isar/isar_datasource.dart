@@ -1,48 +1,43 @@
-import 'dart:async';
-
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'task_model.dart';
 
 class IsarDatasource {
-  final completer = Completer<Isar>();
+  Isar? _isar;
 
-  IsarDatasource() {
-    initIsar();
-  }
+  Future<Isar> _getInstance() async {
+    if (_isar != null) {
+      return _isar!;
+    }
 
-  initIsar() async {
     final dir = await getApplicationDocumentsDirectory();
-    final isar = await Isar.open(
+    _isar = await Isar.open(
       [TaskModelSchema],
       directory: dir.path,
     );
-    completer.complete(isar);
+
+    return _isar!;
   }
 
-  Future<List<TaskModel?>> getTasks() async {
-    final isar = await completer.future;
-    return isar.taskModels.getAll([]);
+  Future<List<TaskModel>> getTasks() async {
+    final isar = await _getInstance();
+    return await isar.taskModels.where().findAll();
   }
 
-  Future<void> add(TaskModel model) async {
-    final isar = await completer.future;
-    await isar.taskModels.put(model);
+  Future<void> deleteAllTasks() async {
+    final isar = await _getInstance();
+
+    await isar.writeTxn(() {
+      return isar.taskModels.where().deleteAll(); // insert & update
+    });
   }
 
-  Future<void> addAll(List<TaskModel> models) async {
-    final isar = await completer.future;
-    await isar.taskModels.putAll(models);
-  }
+  Future<void> putAllTasks(List<TaskModel> models) async {
+    final isar = await _getInstance();
 
-  Future<void> remove(TaskModel model) async {
-    final isar = await completer.future;
-    await isar.taskModels.delete(model.id);
-  }
-
-  Future<void> removeAll() async {
-    final isar = await completer.future;
-    await isar.taskModels.deleteAll([]);
+    await isar.writeTxn(() {
+      return isar.taskModels.putAll(models); // insert & update
+    });
   }
 }

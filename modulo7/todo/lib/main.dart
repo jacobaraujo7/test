@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:todo/src/blocs/board_bloc.dart';
-import 'package:todo/src/pages/home_page.dart';
+import 'package:todo/src/cubits/board_cubit.dart';
+import 'package:todo/src/repositories/board_repository.dart';
 import 'package:todo/src/repositories/isar/isar_board_repository.dart';
 import 'package:todo/src/repositories/isar/isar_datasource.dart';
 
-import 'src/repositories/board_repository.dart';
+import 'src/pages/board_page.dart';
 
 void main() {
   runApp(const AppWidget());
@@ -18,11 +18,16 @@ class AppWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        RepositoryProvider<BoardRepository>(create: (_) => IsarBoardRepository(IsarDatasource())),
-        BlocProvider(create: (ctx) => BoardBloc(ctx.read())),
+        RepositoryProvider(create: (ctx) => IsarDatasource()),
+        RepositoryProvider<BoardRepository>(create: (ctx) => IsarBoardRepository(ctx.read())),
+        BlocProvider(create: (ctx) => BoardCubit(ctx.read())),
       ],
-      child: const MaterialApp(
-        home: HomePage(),
+      child: MaterialApp(
+        theme: ThemeData(
+          useMaterial3: true,
+          colorSchemeSeed: Colors.purple,
+        ),
+        home: const BoardPage(),
       ),
     );
   }

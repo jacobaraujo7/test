@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:todo/src/models/board.dart';
 import 'package:todo/src/models/task.dart';
+import 'package:todo/src/repositories/board_repository.dart';
 import 'package:todo/src/repositories/isar/isar_board_repository.dart';
 import 'package:todo/src/repositories/isar/isar_datasource.dart';
 import 'package:todo/src/repositories/isar/task_model.dart';
@@ -9,41 +9,31 @@ import 'package:todo/src/repositories/isar/task_model.dart';
 class IsarDatasourceMock extends Mock implements IsarDatasource {}
 
 void main() {
-  final datasource = IsarDatasourceMock();
-  final repository = IsarBoardRepository(datasource);
-  tearDown(() => reset(datasource));
+  late IsarDatasource datasource;
+  late BoardRepository repository;
 
-  group('fetch |', () {
-    test('Deve retornar um board', () async {
-      final model = TaskModel() //
-        ..id = 1
-        ..check = false
-        ..description = 'description';
-      when(() => datasource.getTasks()).thenAnswer((_) async => [model]);
-
-      final result = await repository.fetch();
-
-      expect(result.tasks.length, 1);
-      expect(result.tasks.first.id, 1);
-      expect(result.tasks.first.check, false);
-      expect(result.tasks.first.description, 'description');
-    });
+  setUp(() {
+    datasource = IsarDatasourceMock();
+    repository = IsarBoardRepository(datasource);
   });
 
-  group('update |', () {
-    test('Deve atualizar um board adicionando task', () async {
-      when(() => datasource.removeAll()).thenAnswer((_) async => []);
-      when(() => datasource.addAll(any())).thenAnswer((_) async => []);
-      final board = Board(id: 1, title: '', tasks: [
-        Task(id: 1, description: 'description', check: false),
-      ]);
+  test('fetch', () async {
+    when(() => datasource.getTasks()).thenAnswer((_) async => [
+          TaskModel()..id = 1,
+        ]);
 
-      final result = await repository.update(board);
+    final tasks = await repository.fetch();
+    expect(tasks.length, 1);
+  });
 
-      expect(result.tasks.length, 1);
-      expect(result.tasks.first.id, 1);
-      expect(result.tasks.first.check, false);
-      expect(result.tasks.first.description, 'description');
-    });
+  test('update', () async {
+    when(() => datasource.deleteAllTasks()).thenAnswer((_) async => []);
+    when(() => datasource.putAllTasks(any())).thenAnswer((_) async => []);
+
+    final tasks = await repository.update([
+      const Task(id: -1, description: ''),
+      const Task(id: 2, description: ''),
+    ]);
+    expect(tasks.length, 2);
   });
 }
